@@ -1,0 +1,344 @@
+#!/usr/bin/env python3
+"""runlog -- record a cluster job as a vault run note, from the cluster.
+
+Writes markdown to ~/vault-outbox/. Nothing else is installed on the cluster:
+no git, no vault, no daemon. Your Mac collects the outbox with vault-collect,
+so iCloud stays the only thing that ever writes the vault.
+
+    runlog                       pick from your live jobs, write the note
+    runlog --job 4471829         skip the picker
+    runlog --note "cleaning done"        append to the most recent note
+    runlog --end --status failed         close the most recent note
+    runlog --day                 today's commands, grouped, as a draft
+
+The scheduler is queried once, when you run the command. Nothing polls.
+Launch commands are pulled from atuin so you never retype them.
+
+Put this in chezmoi. Per-host settings come from the environment:
+    RUNLOG_VAULT     path to the vault clone on this cluster
+    RUNLOG_CLUSTER   name to record (default: short hostname)
+    RUNLOG_OUTBOX    fallback dir if there is no vault clone (default: ~/vault-outbox)
+    RUNLOG_AGENT     who is logging (default: $USER)
+    RUNLOG_NO_PUSH   set to skip the git push
+
+Once per cluster:
+    git clone <vault-url> ~/obsidian
+    export RUNLOG_VAULT=~/obsidian RUNLOG_CLUSTER=hercules
+
+Run notes land in "21 RUNS/" and day logs in "_Agents/inbox/". Each is a new file
+with a unique name, so concurrent writers never collide.
+"""
+import argparse, datetime, glob, os, re, shutil, socket, subprocess, sys
+
+# With the whole vault cloned on the cluster, runlog writes straight into it.
+# RUNLOG_VAULT points at that clone. Without it, it falls back to a plain outbox.
+VAULT = os.path.expanduser(os.environ.get("RUNLOG_VAULT", ""))
+REPO = VAULT if VAULT else ""
+OUTBOX = (os.path.join(VAULT, "21 RUNS") if VAULT
+          else os.path.expanduser(os.environ.get("RUNLOG_OUTBOX", "~/vault-outbox")))
+CLUSTER = os.environ.get("RUNLOG_CLUSTER") or socket.gethostname().split(".")[0]
+AGENT = os.environ.get("RUNLOG_AGENT") or os.environ.get("USER", "fazal")
+STATUSES = ("queued", "running", "done", "failed", "killed")
+
+
+def run(cmd, **kw):
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=20, **kw).stdout
+    except Exception:
+        return ""
+
+
+def have(x):
+    return shutil.which(x) is not None
+
+
+def now():
+    return datetime.datetime.now().replace(microsecond=0)
+
+
+def stamp(dt=None):
+    return (dt or now()).strftime("**[%Y-%m-%d @%H:%M:%S]**")
+
+
+# ---------------------------------------------------------------- scheduler
+
+def live_jobs():
+    """One query, on demand. Returns [{job_id, name, state, started, workdir}]."""
+    jobs = []
+    if have("squeue"):
+        out = run(["squeue", "-u", os.environ.get("USER", ""), "-h",
+                   "-o", "%i|%j|%T|%S|%Z"])
+        for line in out.strip().splitlines():
+            f = line.split("|")
+            if len(f) >= 5:
+                jobs.append(dict(job_id=f[0], name=f[1], state=f[2].lower(),
+                                 started=f[3], workdir=f[4], scheduler="slurm"))
+    if have("condor_q"):
+        out = run(["condor_q", "-nobatch", "-af", "ClusterId", "Cmd", "JobStatus", "Iwd"])
+        st = {"1": "queued", "2": "running", "3": "killed", "4": "done", "5": "queued", "6": "failed"}
+        for line in out.strip().splitlines():
+            f = line.split()
+            if len(f) >= 4:
+                jobs.append(dict(job_id=f[0], name=os.path.basename(f[1]),
+                                 state=st.get(f[2], "running"), started="",
+                                 workdir=f[3], scheduler="condor"))
+    return jobs
+
+
+def job_exit(job_id):
+    """Final state and exit code, after the fact. One sacct call."""
+    if have("sacct"):
+        out = run(["sacct", "-j", str(job_id), "-n", "-P", "-X",
+                   "-o", "State,ExitCode,End,Elapsed"])
+        line = out.strip().splitlines()[0] if out.strip() else ""
+        if line:
+            f = line.split("|")
+            state = f[0].split()[0].lower()
+            return dict(state={"completed": "done", "failed": "failed",
+                               "cancelled": "killed", "timeout": "killed"}.get(state, state),
+                        exit_code=f[1] if len(f) > 1 else "",
+                        end=f[2] if len(f) > 2 else "",
+                        elapsed=f[3] if len(f) > 3 else "")
+    return {}
+
+
+# -------------------------------------------------------------------- atuin
+
+def atuin(after="1 day ago", limit=400):
+    """Recent commands on this host. Degrades to [] if atuin is absent."""
+    if not have("atuin"):
+        return []
+    fmt = "{time}\x1f{exit}\x1f{duration}\x1f{directory}\x1f{command}"
+    for args in (["atuin", "search", "--after", after, "--format", fmt, "--limit", str(limit)],
+                 ["atuin", "history", "list", "--format", fmt, "--after", after],
+                 ["atuin", "history", "list", "--format", fmt]):
+        out = run(args)
+        if out.strip():
+            rows = []
+            for line in out.strip().splitlines()[-limit:]:
+                f = line.split("\x1f")
+                if len(f) >= 5:
+                    rows.append(dict(time=f[0], exit=f[1], duration=f[2],
+                                     cwd=f[3], command=f[4]))
+            return rows
+    return []
+
+
+LAUNCHERS = re.compile(r"\b(sbatch|srun|condor_submit|nextflow run|nohup|bash .*\.sh|\./.*\.sh)\b")
+
+
+def launch_command_for(job):
+    """Best-effort: the most recent launcher command run in the job's workdir."""
+    rows = atuin()
+    wd = (job or {}).get("workdir", "")
+    cands = [r for r in rows if LAUNCHERS.search(r["command"])]
+    if wd:
+        same = [r for r in cands if r["cwd"].rstrip("/") == wd.rstrip("/")]
+        if same:
+            return same[-1]
+    return cands[-1] if cands else None
+
+
+# --------------------------------------------------------------------- notes
+
+def outbox():
+    os.makedirs(OUTBOX, exist_ok=True)
+    return OUTBOX
+
+
+def note_path(job_id, target, when=None):
+    when = when or now()
+    name = "%s %s %s %s.md" % (when.strftime("%Y.%m.%d"), CLUSTER, job_id, target)
+    return os.path.join(outbox(), name)
+
+
+def most_recent():
+    files = sorted(glob.glob(os.path.join(outbox(), "*.md")), key=os.path.getmtime)
+    if not files:
+        sys.exit("no run note in %s yet" % OUTBOX)
+    return files[-1]
+
+
+def find_note(job_id):
+    if not job_id:
+        return most_recent()
+    for p in glob.glob(os.path.join(outbox(), "*.md")):
+        if re.search(r'^job_id:\s*"?%s"?\s*$' % re.escape(str(job_id)),
+                     open(p, encoding="utf-8").read(), re.M):
+            return p
+    sys.exit("no note for job %s in %s" % (job_id, OUTBOX))
+
+
+def append(path, text):
+    s = open(path, encoding="utf-8").read()
+    head, _, rest = s.partition("## Log")
+    s = head + "## Log\n\n" + text.rstrip() + "\n\n" + rest.lstrip("\n")
+    open(path, "w", encoding="utf-8").write(s)
+
+
+def set_field(path, key, value):
+    s = open(path, encoding="utf-8").read()
+    s = re.sub(r"^(%s:).*$" % re.escape(key), lambda m: "%s %s" % (m.group(1), value),
+               s, count=1, flags=re.M)
+    open(path, "w", encoding="utf-8").write(s)
+
+
+def push(path, message):
+    """Commit and push. Run notes are new files with unique names, and agents
+    otherwise write only under _Agents/, so two writers never touch one file."""
+    if os.environ.get("RUNLOG_NO_PUSH"):
+        return
+    repo = REPO or OUTBOX
+    if not os.path.isdir(os.path.join(repo, ".git")):
+        return
+    for cmd in (["git", "-C", repo, "add", "--", path],
+                ["git", "-C", repo, "commit", "-q", "-m", message],
+                ["git", "-C", repo, "pull", "-q", "--rebase"],
+                ["git", "-C", repo, "push", "-q"]):
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, timeout=60)
+        except Exception as e:
+            print("outbox push failed (%s). The file is written; it will go next time."
+                  % type(e).__name__, file=sys.stderr)
+            return
+
+
+def pick(jobs):
+    if not jobs:
+        return None
+    if len(jobs) == 1:
+        return jobs[0]
+    for i, j in enumerate(jobs, 1):
+        print("%2d  %-10s %-24s %-9s %s" % (i, j["job_id"], j["name"][:24],
+                                            j["state"], j["workdir"]))
+    try:
+        n = int(input("which job? ").strip())
+    except (ValueError, EOFError, KeyboardInterrupt):
+        sys.exit("cancelled")
+    if not 1 <= n <= len(jobs):
+        sys.exit("out of range")
+    return jobs[n - 1]
+
+
+# ------------------------------------------------------------------ commands
+
+def cmd_new(a):
+    jobs = live_jobs()
+    job = None
+    if a.job:
+        job = next((j for j in jobs if j["job_id"] == str(a.job)), None) or \
+              dict(job_id=str(a.job), name="", state="running", started="",
+                   workdir=os.getcwd(), scheduler=a.scheduler or "slurm")
+    else:
+        job = pick(jobs)
+    if job is None:
+        job = dict(job_id=a.job or "manual-%s" % now().strftime("%H%M%S"), name="",
+                   state="running", started="", workdir=os.getcwd(),
+                   scheduler=a.scheduler or "shell")
+
+    launch = launch_command_for(job)
+    target = a.target or os.path.basename(job["workdir"].rstrip("/")) or "unknown"
+    path = note_path(job["job_id"], target)
+    if os.path.exists(path):
+        sys.exit("already logged: %s" % path)
+
+    body = """---
+type: run
+project: {project}
+target: {target}
+cluster: {cluster}
+scheduler: {sched}
+job_id: "{job_id}"
+script: {script}
+revision: {revision}
+started: {started}
+ended:
+status: {status}
+outdir: {workdir}
+launched_by: {by}
+author: {by}
+---
+## Log
+
+{stamp} Logged with runlog.{note}
+{launch}""".format(
+        project=('"[[%s]]"' % a.project) if a.project else "",
+        target=target, cluster=CLUSTER, sched=job.get("scheduler", "shell"),
+        job_id=job["job_id"], script=a.script or job.get("name", ""),
+        revision=a.revision or "", started=now().isoformat(),
+        status=job.get("state", "running"), workdir=job["workdir"], by=AGENT,
+        stamp=stamp(), note=(" " + a.note) if a.note else "",
+        launch=("\n```bash\n%s\n```\n" % launch["command"]) if launch else "")
+    open(path, "w", encoding="utf-8").write(body)
+    push(path, "run %s %s %s started" % (CLUSTER, job["job_id"], target))
+    print(path)
+
+
+def cmd_note(a):
+    p = find_note(a.job)
+    append(p, "%s %s" % (stamp(), a.note))
+    push(p, "run %s note" % CLUSTER)
+    print(p)
+
+
+def cmd_end(a):
+    p = find_note(a.job)
+    jid = re.search(r'^job_id:\s*"?([^"\n]+)"?', open(p, encoding="utf-8").read(), re.M)
+    info = job_exit(jid.group(1)) if jid else {}
+    status = a.status or info.get("state") or "done"
+    set_field(p, "status", status)
+    set_field(p, "ended", now().isoformat())
+    bits = [status.capitalize() + "."]
+    if info.get("exit_code"):
+        bits.append("exit %s." % info["exit_code"])
+    if info.get("elapsed"):
+        bits.append("elapsed %s." % info["elapsed"])
+    if a.note:
+        bits.append(a.note)
+    append(p, "%s %s" % (stamp(), " ".join(bits)))
+    push(p, "run %s %s" % (CLUSTER, status))
+    print(p)
+
+
+def cmd_day(a):
+    rows = atuin(after="today")
+    if not rows:
+        sys.exit("atuin returned nothing (not installed, or no history today)")
+    d = os.path.join(VAULT, "_Agents", "inbox") if VAULT else outbox()
+    os.makedirs(d, exist_ok=True)
+    path = os.path.join(d, "%s %s day.md" % (now().strftime("%Y.%m.%d"), CLUSTER))
+    groups = {}
+    for r in rows:
+        groups.setdefault(r["cwd"], []).append(r)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("---\ntype: note\ncluster: %s\ncreated: %s\nauthor: %s\n---\n"
+                % (CLUSTER, now().strftime("%Y-%m-%d"), AGENT))
+        f.write("\n%s Commands run on %s today, from atuin. Edit down to what matters.\n"
+                % (stamp(), CLUSTER))
+        for cwd, rs in groups.items():
+            f.write("\n#### `%s`\n\n```bash\n" % cwd)
+            for r in rs:
+                f.write("%s\n" % r["command"])
+            f.write("```\n")
+    push(path, "day log %s" % CLUSTER)
+    print(path)
+
+
+p = argparse.ArgumentParser(prog="runlog", description=__doc__,
+                            formatter_class=argparse.RawDescriptionHelpFormatter)
+p.add_argument("--job"); p.add_argument("--target"); p.add_argument("--project")
+p.add_argument("--script"); p.add_argument("--revision")
+p.add_argument("--scheduler", choices=["slurm", "condor", "nextflow", "shell"])
+p.add_argument("--note"); p.add_argument("--status", choices=STATUSES)
+p.add_argument("--end", action="store_true", help="close the note")
+p.add_argument("--day", action="store_true", help="draft today's commands")
+a = p.parse_args()
+
+if a.day:
+    cmd_day(a)
+elif a.end:
+    cmd_end(a)
+elif a.note and not a.target and not a.project:
+    cmd_note(a)
+else:
+    cmd_new(a)

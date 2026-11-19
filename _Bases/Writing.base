@@ -1,0 +1,27 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+    - type == "writing"
+formulas:
+  Deadline: if(deadline, deadline.format("YYYY.MM.DD"), "")
+  Updated: file.mtime.format("YYYY.MM.DD")
+properties:
+  note.status:
+    displayName: Status
+  note.venue:
+    displayName: Venue
+views:
+  - type: table
+    name: All
+    order:
+      - file.name
+      - status
+      - venue
+      - formula.Deadline
+      - formula.Updated
+    sort:
+      - property: deadline
+        direction: ASC
+    columnSize:
+      file.name: 300

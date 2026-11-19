@@ -1,0 +1,42 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+    - 'type == "note"'
+properties:
+  note.summary: { displayName: Summary }
+  note.project: { displayName: Project }
+  note.topic: { displayName: Topic }
+  note.status: { displayName: Status }
+formulas:
+  Updated: 'file.mtime.format("YYYY.MM.DD")'
+views:
+  - type: table
+    name: This project
+    filters:
+      and:
+        - 'project.contains(this.key)'
+    order: [file.name, summary, status, formula.Updated]
+    sort: [{ property: file.mtime, direction: DESC }]
+    columnSize: { file.name: 240, note.summary: 420 }
+  - type: table
+    name: In this folder
+    filters:
+      and:
+        - 'file.folder == this.file.folder'
+        - 'file.name != this.file.name'
+    order: [file.name, summary, formula.Updated]
+    sort: [{ property: file.mtime, direction: DESC }]
+    columnSize: { file.name: 240, note.summary: 420 }
+  - type: table
+    name: All notes
+    order: [file.name, summary, project, topic, status, formula.Updated]
+    sort: [{ property: file.mtime, direction: DESC }]
+    columnSize: { file.name: 260, note.summary: 400 }
+  - type: table
+    name: No summary yet
+    filters:
+      and:
+        - 'summary.isEmpty()'
+    order: [file.name, project, formula.Updated]
+    sort: [{ property: file.mtime, direction: DESC }]

@@ -1,0 +1,60 @@
+filters:
+  and:
+  - '!file.path.contains("_Templates")'
+  - '!file.path.contains("_Archive")'
+  - type == "test"
+formulas:
+  Date: if(date, date.format("YYYY.MM.DD"), "")
+properties:
+  note.subject:
+    displayName: Subject
+  note.project:
+    displayName: Project
+  note.status:
+    displayName: Status
+  note.target:
+    displayName: Target
+views:
+- type: table
+  name: All
+  order:
+  - file.name
+  - formula.Date
+  - subject
+  - target
+  - project
+  - status
+  sort:
+  - property: date
+    direction: DESC
+  columnSize:
+    file.name: 300
+- type: table
+  name: This project
+  filters:
+    or:
+    - target == this.key
+    - project.contains(this.key)
+  order:
+  - file.name
+  - formula.Date
+  - subject
+  - status
+  sort:
+  - property: date
+    direction: DESC
+- type: table
+  name: This target
+  filters:
+    or:
+    - target == this.key
+    - target.contains(this.key)
+    - project.contains(this.key)
+  order:
+  - file.name
+  - subject
+  - project
+  - status
+  sort:
+  - property: created
+    direction: DESC

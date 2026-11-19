@@ -1,0 +1,23 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+    - 'type == "project"'
+properties:
+  note.key: { displayName: Key }
+  note.status: { displayName: Status }
+  note.targets: { displayName: Targets }
+  note.collaborators: { displayName: With }
+formulas:
+  Updated: 'file.mtime.format("YYYY.MM.DD")'
+views:
+  - type: table
+    name: All
+    order: [file.name, key, status, targets, collaborators, formula.Updated]
+    sort: [{ property: status, direction: ASC }, { property: file.mtime, direction: DESC }]
+    columnSize: { file.name: 220 }
+  - type: table
+    name: Active
+    filters: { and: ['status == "active"'] }
+    order: [file.name, key, targets, collaborators, formula.Updated]
+    sort: [{ property: file.mtime, direction: DESC }]

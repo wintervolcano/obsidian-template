@@ -1,0 +1,18 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+    - file.ext == "canvas"
+formulas:
+  Project: file.folder.replace("01 PROJECTS/", "")
+  Updated: file.mtime.format("YYYY.MM.DD")
+views:
+  - type: table
+    name: All canvases
+    order:
+      - file.name
+      - formula.Project
+      - formula.Updated
+    sort:
+      - property: file.mtime
+        direction: DESC

@@ -1,0 +1,83 @@
+filters:
+  and:
+  - '!file.path.contains("_Templates")'
+  - '!file.path.contains("_Archive")'
+  - type == "processing"
+formulas:
+  Date: if(date, date.format("YYYY.MM.DD"), "")
+properties:
+  note.target:
+    displayName: Target
+  note.server:
+    displayName: Server
+  note.project:
+    displayName: Project
+  note.accel:
+    displayName: Accel
+  note.dm:
+    displayName: DM
+  note.segment:
+    displayName: Seg
+  note.data_path:
+    displayName: Path
+views:
+- type: table
+  name: All
+  order:
+  - file.name
+  - formula.Date
+  - target
+  - server
+  - accel
+  - dm
+  - segment
+  sort:
+  - property: date
+    direction: DESC
+  columnSize:
+    file.name: 300
+    note.target: 120
+- type: table
+  name: This project
+  filters:
+    or:
+    - target == this.key
+    - project.contains(this.key)
+    - target.contains(this.file.name)
+  order:
+  - file.name
+  - formula.Date
+  - server
+  - accel
+  - dm
+  - segment
+  sort:
+  - property: date
+    direction: DESC
+- type: table
+  name: By target
+  order:
+  - target
+  - file.name
+  - formula.Date
+  - server
+  sort:
+  - property: target
+    direction: ASC
+  - property: date
+    direction: DESC
+- type: table
+  name: This target
+  filters:
+    or:
+    - target == this.key
+    - target.contains(this.key)
+    - project.contains(this.key)
+  order:
+  - file.name
+  - date
+  - server
+  - project
+  sort:
+  - property: date
+    direction: DESC

@@ -1,0 +1,83 @@
+filters:
+  and:
+  - '!file.path.contains("_Templates")'
+  - '!file.path.contains("_Archive")'
+  - type == "observation"
+properties:
+  note.target:
+    displayName: Target
+  note.telescope:
+    displayName: Telescope
+  note.project:
+    displayName: Project
+  note.obs_code:
+    displayName: Code
+  note.status:
+    displayName: Status
+formulas:
+  Date: if(date, date.format("YYYY.MM.DD"), "")
+  Hours: if(start && end, ((end - start) / 3600000).round(1) + " h", "")
+views:
+- type: table
+  name: All
+  order:
+  - file.name
+  - formula.Date
+  - target
+  - telescope
+  - formula.Hours
+  - obs_code
+  - status
+  sort:
+  - property: date
+    direction: DESC
+  columnSize:
+    file.name: 300
+    note.target: 130
+    note.telescope: 130
+- type: table
+  name: This project
+  filters:
+    or:
+    - target == this.key
+    - project.contains(this.key)
+    - target.contains(this.file.name)
+  order:
+  - file.name
+  - formula.Date
+  - telescope
+  - formula.Hours
+  - obs_code
+  - status
+  sort:
+  - property: date
+    direction: DESC
+- type: table
+  name: By target
+  order:
+  - target
+  - file.name
+  - formula.Date
+  - telescope
+  - status
+  sort:
+  - property: target
+    direction: ASC
+  - property: date
+    direction: DESC
+- type: table
+  name: This target
+  filters:
+    or:
+    - target == this.key
+    - target.contains(this.key)
+    - project.contains(this.key)
+  order:
+  - file.name
+  - formula.Date
+  - telescope
+  - formula.Hours
+  - status
+  sort:
+  - property: date
+    direction: DESC

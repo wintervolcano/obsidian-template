@@ -1,0 +1,160 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+    - type == "candidate"
+formulas:
+  Epoch: if(epoch, epoch.format("YYYY.MM.DD"), "")
+  Half: if(p0_ms, (p0_ms / 2).round(4), "")
+  Double: if(p0_ms, (p0_ms * 2).round(4), "")
+  Plot: if(plot, plot, if(file.embeds[0].containsAny("png","jpg","jpeg","webp"), file.embeds[0]))
+properties:
+  note.target:
+    displayName: Target
+  note.p0_ms:
+    displayName: P (ms)
+  note.dm:
+    displayName: DM
+  note.acc:
+    displayName: Acc
+  note.snr:
+    displayName: S/N
+  note.beam:
+    displayName: Beam
+  note.segment:
+    displayName: Seg
+  note.status:
+    displayName: Status
+  note.same_as:
+    displayName: Same as
+views:
+  - type: cards
+    name: Plots
+    groupBy:
+      property: target
+      direction: ASC
+    order:
+      - file.name
+      - p0_ms
+      - dm
+      - formula.Epoch
+      - beam
+      - status
+    sort:
+      - property: target
+        direction: ASC
+      - property: p0_ms
+        direction: ASC
+    image: formula.Plot
+    imageAspectRatio: 1
+    imageFit: contain
+    cardSize: 250
+  - type: table
+    name: By target
+    groupBy:
+      property: target
+      direction: ASC
+    order:
+      - target
+      - p0_ms
+      - dm
+      - acc
+      - snr
+      - formula.Epoch
+      - beam
+      - segment
+      - status
+      - file.name
+    sort:
+      - property: target
+        direction: ASC
+      - property: p0_ms
+        direction: ASC
+    columnSize:
+      note.target: 120
+      note.p0_ms: 110
+      file.name: 280
+  - type: table
+    name: By period
+    order:
+      - p0_ms
+      - target
+      - dm
+      - formula.Epoch
+      - beam
+      - status
+      - file.name
+    sort:
+      - property: p0_ms
+        direction: ASC
+    columnSize:
+      note.p0_ms: 110
+      note.target: 120
+  - type: table
+    name: New
+    filters:
+      and:
+        - status == "new"
+    order:
+      - target
+      - p0_ms
+      - dm
+      - acc
+      - snr
+      - formula.Epoch
+      - beam
+      - segment
+    sort:
+      - property: target
+        direction: ASC
+      - property: p0_ms
+        direction: ASC
+  - type: table
+    name: Confirmed
+    filters:
+      and:
+        - status == "confirmed"
+    order:
+      - target
+      - p0_ms
+      - formula.Half
+      - formula.Double
+      - dm
+      - file.name
+    sort:
+      - property: p0_ms
+        direction: ASC
+  - type: table
+    name: RFI
+    filters:
+      and:
+        - status == "rfi"
+    order:
+      - p0_ms
+      - target
+      - dm
+      - formula.Epoch
+      - file.name
+    sort:
+      - property: p0_ms
+        direction: ASC
+  - type: table
+    name: This target
+    filters:
+      or:
+        - target.contains(this.key)
+        - target == this.file.name
+        - project.contains(this.key)
+    order:
+      - p0_ms
+      - dm
+      - acc
+      - snr
+      - formula.Epoch
+      - beam
+      - segment
+      - status
+      - file.name
+    sort:
+      - property: p0_ms
+        direction: ASC

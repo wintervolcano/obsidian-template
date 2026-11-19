@@ -1,0 +1,41 @@
+# The vault's own backup is whatever syncs it (iCloud, Dropbox, Obsidian Sync).
+# Git here carries the NOTES, so a clone stays small and holds nothing it should not.
+
+# Attachments: every image and PDF, anywhere
+attachments/
+**/attachments/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.pdf
+*.excalidraw.md
+
+# Media and binaries
+*.pptx
+*.key
+*.mp4
+*.mov
+*.zip
+*.tar.gz
+
+# Plugin payloads: reinstallable, and large
+.obsidian/plugins/*/main.js
+.obsidian/plugins/*/styles.css
+.obsidian/themes/*/theme.css
+
+# Noise
+.DS_Store
+**/.DS_Store
+.trash/
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/graph.json
+*.bak-*
+
+# Secrets: never, on any machine
+*.pem
+.env
+.obsidian/plugins/obsidian-git/data.json

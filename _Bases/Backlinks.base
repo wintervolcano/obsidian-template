@@ -1,0 +1,24 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+    - file.hasLink(this)
+formulas:
+  Date: if(date, date.format("YYYY.MM.DD"), file.mtime.format("YYYY.MM.DD"))
+properties:
+  file.name:
+    displayName: Note
+  note.type:
+    displayName: Type
+views:
+  - type: table
+    name: Backlinks
+    order:
+      - file.name
+      - type
+      - formula.Date
+    sort:
+      - property: file.mtime
+        direction: DESC
+    columnSize:
+      file.name: 320

@@ -1,0 +1,93 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+    - type.containsAny("journal-club", "talk", "lecture", "session")
+formulas:
+  Date: if(date, date.format("YYYY.MM.DD"), "")
+properties:
+  note.presenter:
+    displayName: Speaker
+  note.event:
+    displayName: Event
+  note.paper:
+    displayName: Paper
+views:
+  - type: table
+    name: All
+    order:
+      - file.name
+      - formula.Date
+      - type
+      - presenter
+      - event
+      - paper
+    sort:
+      - property: date
+        direction: DESC
+    columnSize:
+      file.name: 320
+  - type: table
+    name: Journal club
+    filters:
+      and:
+        - type == "journal-club"
+    order:
+      - file.name
+      - formula.Date
+      - presenter
+      - paper
+    sort:
+      - property: date
+        direction: DESC
+  - type: table
+    name: Lectures
+    filters:
+      and:
+        - type == "lecture"
+    order:
+      - file.name
+      - formula.Date
+      - presenter
+      - event
+    sort:
+      - property: date
+        direction: DESC
+  - type: table
+    name: This event
+    filters:
+      or:
+        - event.contains(this.file.name)
+    order:
+      - file.name
+      - formula.Date
+      - presenter
+      - type
+    sort:
+      - property: date
+        direction: ASC
+  - type: table
+    name: Teaching
+    filters:
+      and:
+        - role == "tutor"
+    order:
+      - file.name
+      - formula.Date
+      - event
+      - session
+      - status
+    sort:
+      - property: date
+        direction: DESC
+  - type: table
+    name: By speaker
+    order:
+      - presenter
+      - file.name
+      - formula.Date
+      - type
+      - event
+    sort:
+      - property: presenter
+        direction: ASC

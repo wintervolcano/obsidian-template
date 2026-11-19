@@ -1,0 +1,48 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+    - type.containsAny("concept", "method")
+formulas:
+  Updated: file.mtime.format("YYYY.MM.DD")
+  Size: (file.size / 1024).round(0) + " kB"
+views:
+  - type: table
+    name: All
+    order:
+      - file.name
+      - type
+      - tags
+      - formula.Size
+      - formula.Updated
+    sort:
+      - property: file.name
+        direction: ASC
+    columnSize:
+      file.name: 320
+  - type: table
+    name: Concepts
+    filters:
+      and:
+        - type == "concept"
+    order:
+      - file.name
+      - tags
+      - formula.Size
+      - formula.Updated
+    sort:
+      - property: file.name
+        direction: ASC
+  - type: table
+    name: Cookbook
+    filters:
+      and:
+        - type == "method"
+    order:
+      - file.name
+      - tags
+      - formula.Size
+      - formula.Updated
+    sort:
+      - property: file.name
+        direction: ASC

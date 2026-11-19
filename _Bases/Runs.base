@@ -1,0 +1,150 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+    - type == "run"
+formulas:
+  Started: if(started, started.format("MM.DD HH:mm"), "")
+  Elapsed: if(started && ended, ((ended - started) / 3600000).round(1) + " h", "")
+properties:
+  note.project:
+    displayName: Project
+  note.target:
+    displayName: Target
+  note.cluster:
+    displayName: Cluster
+  note.scheduler:
+    displayName: Sched
+  note.job_id:
+    displayName: Job
+  note.script:
+    displayName: Script
+  note.status:
+    displayName: Status
+  note.outdir:
+    displayName: Output
+  note.launched_by:
+    displayName: By
+views:
+  - type: table
+    name: In flight
+    filters:
+      and:
+        - status != "done"
+        - status != "failed"
+        - status != "killed"
+    groupBy:
+      property: cluster
+      direction: ASC
+    order:
+      - target
+      - project
+      - job_id
+      - script
+      - formula.Started
+      - status
+      - launched_by
+      - file.name
+    sort:
+      - property: file.basename
+        direction: DESC
+      - property: started
+        direction: ASC
+    columnSize:
+      note.target: 150
+      note.script: 160
+  - type: table
+    name: Failed
+    filters:
+      and:
+        - status == "failed"
+    order:
+      - target
+      - cluster
+      - job_id
+      - script
+      - formula.Started
+      - project
+      - launched_by
+    sort:
+      - property: started
+        direction: DESC
+  - type: table
+    name: Finished
+    filters:
+      and:
+        - status == "done"
+    order:
+      - target
+      - cluster
+      - job_id
+      - script
+      - formula.Started
+      - formula.Elapsed
+      - project
+    sort:
+      - property: ended
+        direction: DESC
+  - type: table
+    name: By cluster
+    groupBy:
+      property: cluster
+      direction: ASC
+    order:
+      - status
+      - target
+      - project
+      - job_id
+      - script
+      - formula.Started
+      - formula.Elapsed
+    sort:
+      - property: started
+        direction: DESC
+  - type: table
+    name: By target
+    groupBy:
+      property: target
+      direction: ASC
+    order:
+      - status
+      - cluster
+      - job_id
+      - script
+      - formula.Started
+      - formula.Elapsed
+      - project
+    sort:
+      - property: started
+        direction: DESC
+  - type: table
+    name: All
+    order:
+      - file.name
+      - cluster
+      - target
+      - project
+      - status
+      - formula.Started
+      - formula.Elapsed
+      - launched_by
+    sort:
+      - property: started
+        direction: DESC
+  - type: table
+    name: This project
+    filters:
+      or:
+        - project.contains(this.key)
+        - target.contains(this.key)
+    order:
+      - status
+      - target
+      - cluster
+      - job_id
+      - script
+      - formula.Started
+      - formula.Elapsed
+    sort:
+      - property: started
+        direction: DESC

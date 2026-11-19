@@ -1,0 +1,24 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+    - type == "person"
+properties:
+  note.org:
+    displayName: Org
+  note.role:
+    displayName: Role
+  note.birthday:
+    displayName: Birthday
+views:
+  - type: table
+    name: All people
+    order:
+      - file.name
+      - org
+      - role
+      - birthday
+      - created
+    sort:
+      - property: file.name
+        direction: ASC

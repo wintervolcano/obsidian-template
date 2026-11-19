@@ -1,0 +1,125 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+formulas:
+  Day: if(date, date.format("ddd"), "")
+  Month: if(date, date.format("YYYY.MM"), "")
+  Size: if(file.size > 160, (file.size / 1024).round(1) + " kB", "--")
+properties:
+  file.links:
+    displayName: Mentions
+  note.summary:
+    displayName: Summary
+views:
+  - type: table
+    name: All days
+    filters:
+      and:
+        - type == "daily"
+    order:
+      - file.name
+      - formula.Day
+      - Summary
+      - file.links
+      - formula.Size
+    sort:
+      - property: date
+        direction: DESC
+    columnSize:
+      file.name: 122
+      formula.Day: 109
+      note.Summary: 424
+      file.links: 300
+  - type: table
+    name: Days I wrote in
+    filters:
+      and:
+        - type == "daily"
+        - file.size > 160
+    order:
+      - file.name
+      - formula.Day
+      - summary
+      - file.links
+      - formula.Size
+    sort:
+      - property: date
+        direction: DESC
+    columnSize:
+      file.name: 172
+      formula.Day: 188
+      note.Summary: 418
+      file.links: 300
+  - type: table
+    name: This month
+    filters:
+      and:
+        - type == "daily"
+        - date.format("YYYY.MM") == now().format("YYYY.MM")
+    order:
+      - file.name
+      - formula.Day
+      - summary
+      - file.links
+    sort:
+      - property: date
+        direction: DESC
+  - type: table
+    name: By month
+    filters:
+      and:
+        - type == "daily"
+    order:
+      - formula.Month
+      - file.name
+      - formula.Day
+      - summary
+    sort:
+      - property: date
+        direction: DESC
+  - type: table
+    name: Today
+    filters:
+      and:
+        - type != "daily"
+        - created == this.date
+    order:
+      - file.name
+      - type
+      - target
+      - project
+    sort:
+      - property: file.name
+        direction: ASC
+    columnSize:
+      file.name: 360
+      note.type: 163
+      note.target: 312
+  - type: table
+    name: Happened today
+    filters:
+      and:
+        - type != "daily"
+        - date == this.date
+    order:
+      - file.name
+      - type
+      - target
+      - telescope
+    sort:
+      - property: file.name
+        direction: ASC
+  - type: table
+    name: Touched today
+    filters:
+      and:
+        - file.mtime.format("YYYY.MM.DD") == this.file.name
+        - file.name != this.file.name
+    order:
+      - file.name
+      - type
+      - formula.Size
+    sort:
+      - property: file.mtime
+        direction: DESC

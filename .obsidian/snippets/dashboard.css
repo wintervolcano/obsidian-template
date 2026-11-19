@@ -1,0 +1,94 @@
+/* =====================================================================
+   dashboard.css -- compact layout for pages with  cssclasses: dashboard
+   =====================================================================
+   The Buttons plugin renders each button as its own block element, so a
+   row of three becomes a 250px vertical stack. Embedded searches have no
+   height limit, so one query can push everything else off the screen.
+   Both are fixed here, scoped so nothing else in the vault changes.
+   ===================================================================== */
+
+/* --- Buttons sit in a row ------------------------------------------- */
+
+.dashboard .block-language-button {
+  display:        inline-block;
+  vertical-align: middle;
+  margin:         0 0.4rem 0.4rem 0;
+  width:          auto;
+}
+
+.dashboard .block-language-button button,
+.dashboard button.button-default {
+  padding:       0.3rem 0.9rem;
+  margin:        0;
+  font-size:     0.82rem;
+  line-height:   1.3;
+  border-radius: 6px;
+  min-height:    0;
+  height:        auto;
+  width:         auto;
+}
+
+/* The real fix: the WRAPPER Obsidian puts around each code block is a
+   full-width block element, so the buttons stack no matter what the inner
+   element does. Make the wrapper inline-block in both views. */
+.dashboard .markdown-preview-sizer > div:has(.block-language-button),
+.dashboard .markdown-preview-sizer > .el-pre:has(.block-language-button),
+.dashboard .cm-preview-code-block:has(.block-language-button),
+.dashboard .cm-embed-block:has(.block-language-button) {
+  display:        inline-block !important;
+  width:          auto !important;
+  max-width:      none;
+  vertical-align: middle;
+  margin:         0 0.4rem 0.5rem 0 !important;
+  padding:        0 !important;
+}
+
+/* --- Embedded searches stay in their box ---------------------------- */
+
+.dashboard .internal-query {
+  margin: 0.4rem 0 1rem;
+}
+
+.dashboard .internal-query .search-result-container {
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.dashboard .internal-query .search-results-children {
+  font-size: 0.86rem;
+}
+
+/* The query's own header is enough; drop the duplicated title row. */
+.dashboard .internal-query .internal-query-header {
+  font-size:   0.72rem;
+  opacity:     0.6;
+  padding:     0;
+  margin:      0 0 0.2rem;
+}
+
+/* --- Embedded bases are already framed, so give them no extra chrome - */
+
+.dashboard .markdown-rendered .internal-embed {
+  margin: 0.3rem 0 1.2rem;
+}
+
+/* --- Tighter vertical rhythm ---------------------------------------- */
+
+.dashboard .markdown-rendered h1 { margin-bottom: 0.4rem; }
+
+.dashboard .markdown-rendered h2 {
+  margin-top:    1.6rem;
+  padding-top:   0.5rem;
+  margin-bottom: 0.2rem;
+  font-size:     1.1rem;
+}
+
+.dashboard .markdown-rendered p { margin: 0.25rem 0; }
+
+.dashboard .markdown-rendered hr { margin: 0.9rem 0; }
+
+/* Collapsed callouts used as drawers should be one compact line. */
+.dashboard .markdown-rendered .callout.is-collapsed {
+  margin:  0.15rem 0;
+  padding: 0.3rem 0.7rem;
+}

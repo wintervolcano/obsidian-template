@@ -1,0 +1,305 @@
+/* =====================================================================
+   paper.css -- the report look, as an Obsidian layer
+   =====================================================================
+   Opt in per note:
+
+       ---
+       cssclasses:
+         - paper
+       ---
+
+   Nothing here applies to a note without that class, so it cannot touch
+   the rest of the vault or fight the Things Wiki figure layer.
+
+   Ported from the artifact's stylesheet: IBM Plex stack, the same
+   palette, a 46rem reading column, numbered section heads with a rule
+   above, figures as bordered cards with the caption underneath, mono
+   small-caps table headers with tabular numerals.
+
+   Figures do NOT float here. That is the point: a full-width card in a
+   single column cannot reflow the text beside it, so nothing shifts when
+   an image loads or when Obsidian reloads a section.
+   ===================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap");
+
+.paper {
+  --p-bg:          #f6f7f9;
+  --p-surface:     #ffffff;
+  --p-ink:         #12151a;
+  --p-ink-2:       #4a5260;
+  --p-muted:       #7c8594;
+  --p-rule:        #e2e5ea;
+  --p-accent:      #2550c4;
+  --p-accent-soft: #e8eefc;
+  --p-good:        #0ca30c;
+  --p-warn:        #b07800;
+  --p-crit:        #d03b3b;
+
+  --p-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --p-body:    "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --p-mono:    "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --p-col: 46rem;
+}
+
+.theme-dark .paper {
+  --p-bg:          #0f1217;
+  --p-surface:     #161a21;
+  --p-ink:         #eef1f5;
+  --p-ink-2:       #b7bfcc;
+  --p-muted:       #8590a0;
+  --p-rule:        #272d37;
+  --p-accent:      #7fa2ff;
+  --p-accent-soft: #1c2640;
+  --p-warn:        #fab219;
+  --p-crit:        #e66767;
+}
+
+/* --- Page and body text --------------------------------------------- */
+
+.paper .markdown-preview-view,
+.paper .markdown-source-view.mod-cm6 .cm-scroller {
+  background: var(--p-bg);
+}
+
+.paper .markdown-rendered,
+.paper .cm-content {
+  font: 400 1rem/1.6 var(--p-body);
+  color: var(--p-ink);
+}
+
+.paper .markdown-rendered p,
+.paper .markdown-rendered li {
+  max-width: var(--p-col);
+}
+
+.paper .markdown-rendered p { margin: .75rem 0; }
+
+/* The first paragraph of the note reads as the lede. */
+.paper .markdown-preview-sizer > .el-p:first-of-type p {
+  font-size: 1.08rem;
+  color: var(--p-ink-2);
+}
+
+/* --- Headings -------------------------------------------------------- */
+
+.paper .markdown-rendered :is(h1, h2, h3, h4) {
+  font-family: var(--p-display);
+  font-weight: 600;
+  text-wrap: balance;
+  color: var(--p-ink);
+}
+
+.paper .markdown-rendered h1 {
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  line-height: 1.1;
+  letter-spacing: -.01em;
+  margin: 0 0 .75rem;
+}
+
+.paper .markdown-rendered h2 {
+  font-size: 1.45rem;
+  line-height: 1.2;
+  margin-top: 3.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--p-rule);
+}
+
+.paper .markdown-rendered h3 { font-size: 1.08rem; margin-top: 1.75rem; }
+
+/* --- Figures: full-width cards, caption from the alt text ------------ */
+
+.paper .markdown-rendered .image-embed {
+  display:    block;
+  float:      none !important;
+  clear:      none !important;
+  width:      auto !important;
+  max-width:  100% !important;
+  margin:     1.5rem 0 .5rem;
+  padding:    .75rem .75rem .25rem;
+  background: var(--p-surface);
+  border:     1px solid var(--p-rule);
+  border-radius: 6px;
+  font-size:  0;                     /* swallow the stray alt-text node */
+  counter-increment: none;
+}
+
+.paper .markdown-rendered .image-embed img {
+  float:         none !important;
+  clear:         none !important;
+  display:       block !important;
+  width:         auto !important;
+  max-width:     100% !important;
+  min-height:    0 !important;
+  margin:        0 auto !important;
+  padding:       0 !important;
+  border:        none !important;
+  border-radius: 3px !important;
+  box-shadow:    none !important;
+  background:    transparent !important;
+}
+
+/* Caption: ![[plot.png|What the figure shows]] */
+.paper .markdown-rendered .image-embed::before { content: none !important; }
+
+.paper .markdown-rendered .image-embed[alt]:not([alt=""])::after {
+  content:    attr(alt);
+  display:    block;
+  float:      none !important;
+  width:      auto !important;
+  max-width:  var(--p-col);
+  margin:     0 !important;
+  padding:    .45rem .25rem .6rem;
+  background: transparent !important;
+  border:     none !important;
+  font:       400 .86rem/1.5 var(--p-body);
+  color:      var(--p-ink-2);
+  text-align: left;
+}
+
+/* --- Tables ---------------------------------------------------------- */
+
+.paper .markdown-rendered table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: .86rem;
+  background: var(--p-surface);
+  border: 1px solid var(--p-rule);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.paper .markdown-rendered :is(th, td) {
+  text-align: left;
+  padding: .5rem .75rem;
+  border: none;
+  border-bottom: 1px solid var(--p-rule);
+  vertical-align: top;
+  font-variant-numeric: tabular-nums;
+}
+
+.paper .markdown-rendered th {
+  font: 500 .72rem/1.3 var(--p-mono);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--p-muted);
+  background: var(--p-bg);
+}
+
+.paper .markdown-rendered tr:last-child td { border-bottom: 0; }
+
+/* --- Code and inline mono -------------------------------------------- */
+
+.paper .markdown-rendered code {
+  font-family: var(--p-mono);
+  font-size: .88em;
+  background: var(--p-accent-soft);
+  padding: .05em .3em;
+  border-radius: 3px;
+  overflow-wrap: anywhere;
+}
+
+.paper .markdown-rendered pre {
+  background: var(--p-surface);
+  border: 1px solid var(--p-rule);
+  border-radius: 6px;
+}
+
+.paper .markdown-rendered pre code { background: none; }
+
+/* --- Callouts: left accent rule, soft fill --------------------------- */
+
+.paper .markdown-rendered .callout {
+  max-width: var(--p-col);
+  margin: 1.25rem 0;
+  padding: .75rem 1rem;
+  background: var(--p-accent-soft);
+  border: none;
+  border-left: 3px solid var(--p-accent);
+  border-radius: 0 6px 6px 0;
+  box-shadow: none;
+  mix-blend-mode: normal;
+}
+
+.paper .markdown-rendered .callout-title {
+  font: 500 .72rem/1.2 var(--p-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--p-muted);
+  padding: 0 0 .3rem;
+}
+
+.paper .markdown-rendered .callout-title-inner { color: inherit; font-weight: 500; }
+
+/* Open questions and limitations pick up the warning colour. */
+.paper .markdown-rendered .callout:is(
+  [data-callout="question"], [data-callout="limitation"], [data-callout="warning"], [data-callout="todo"]
+) {
+  background: transparent;
+  border: 1px dashed var(--p-rule);
+  border-left: 3px solid var(--p-warn);
+}
+
+/* --- Side-by-side figures:  > [!grid]  with two embeds inside -------- */
+
+.paper .markdown-rendered .callout[data-callout="grid"] {
+  background: transparent;
+  border: none;
+  padding: 0;
+  max-width: none;
+}
+
+.paper .markdown-rendered .callout[data-callout="grid"] > .callout-title { display: none; }
+
+.paper .markdown-rendered .callout[data-callout="grid"] > .callout-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  gap: 1rem;
+}
+
+.paper .markdown-rendered .callout[data-callout="grid"] .image-embed { margin: 0; }
+
+/* --- Stat tiles:  > [!stat]  with one "Label: value" per line -------- */
+
+.paper .markdown-rendered .callout[data-callout="stat"] {
+  background: transparent;
+  border: none;
+  padding: 0;
+  max-width: none;
+}
+
+.paper .markdown-rendered .callout[data-callout="stat"] > .callout-title { display: none; }
+
+.paper .markdown-rendered .callout[data-callout="stat"] > .callout-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: .75rem;
+  margin: 1.25rem 0;
+}
+
+.paper .markdown-rendered .callout[data-callout="stat"] li {
+  list-style: none;
+  background: var(--p-surface);
+  border: 1px solid var(--p-rule);
+  border-radius: 6px;
+  padding: .7rem .85rem;
+  margin: 0;
+  max-width: none;
+}
+
+.paper .markdown-rendered .callout[data-callout="stat"] ul { padding: 0; margin: 0; display: contents; }
+
+.paper .markdown-rendered .callout[data-callout="stat"] li strong {
+  display: block;
+  font: 500 1.15rem/1.3 var(--p-mono);
+  color: var(--p-ink);
+  margin-top: .2rem;
+}
+
+/* --- Links, rules, misc ---------------------------------------------- */
+
+.paper .markdown-rendered a { color: var(--p-accent); text-decoration: none; }
+.paper .markdown-rendered a:hover { text-decoration: underline; }
+.paper .markdown-rendered hr { border: none; border-top: 1px solid var(--p-rule); margin: 2rem 0; }
+.paper .markdown-rendered blockquote { border-left: 3px solid var(--p-rule); color: var(--p-ink-2); }

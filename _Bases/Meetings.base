@@ -1,0 +1,54 @@
+filters:
+  and:
+    - '!file.path.contains("_Templates")'
+    - '!file.path.contains("_Archive")'
+    - type == "meeting"
+formulas:
+  Date: if(date, date.format("YYYY.MM.DD"), "")
+  Folder: file.folder.replace("02 MEETINGS/", "")
+properties:
+  note.people:
+    displayName: People
+  note.org:
+    displayName: Org
+views:
+  - type: table
+    name: Meetings
+    order:
+      - file.name
+      - formula.Date
+      - formula.Folder
+      - people
+      - org
+    sort:
+      - property: date
+        direction: DESC
+    limit: 10
+    columnSize:
+      file.name: 300
+  - type: table
+    name: Person
+    filters:
+      or:
+        - list(people).contains(this)
+        - file.hasLink(this)
+    order:
+      - file.name
+      - formula.Date
+      - formula.Folder
+      - org
+    sort:
+      - property: date
+        direction: DESC
+  - type: table
+    name: Weekly
+    filters:
+      and:
+        - file.folder.contains("Weekly")
+    order:
+      - file.name
+      - formula.Date
+      - people
+    sort:
+      - property: date
+        direction: DESC
