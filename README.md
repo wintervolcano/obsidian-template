@@ -4,7 +4,7 @@ A scratch Obsidian vault for research work. It is the skeleton of the vault I us
 PhD in pulsar astronomy, with all of my own notes taken out: the folders, the templates,
 the Bases, the agent rules and the run-logging scripts.
 
-Written up here: [My Obsidian setup, in the age of agents](https://fazalkareem.com/blog/2026-11-19-my-obsidian-setup-in-the-age-of-agents).
+Written up here: [My Obsidian setup, in the age of agents](https://YOUR-SITE/blog/2026-11-19-my-obsidian-setup-in-the-age-of-agents).
 
 ## Install
 
@@ -21,8 +21,11 @@ Written up here: [My Obsidian setup, in the age of agents](https://fazalkareem.c
 | `_Bases/` | 10 Bases: runs, candidates, processing, issues, observations, projects, tests, meetings, daily, notes |
 | `_Scripts/` | `runlog` and `vault-collect`, for logging cluster jobs |
 | `AGENTS.md` | the rules an AI agent reads before writing to the vault |
-| `.obsidian/snippets/` | `paper.css` for report layout, `dashboard.css` for the home note |
+| `.obsidian/` | hotkeys, Templater and daily-note settings, and the two CSS snippets |
 | `Example *` notes | demo content so the Bases are not empty. Delete them. |
+
+Install Templater, restart, and **cmd-shift-N** makes any kind of note in the right place.
+That is the whole workflow.
 
 ## Plugins you will need
 

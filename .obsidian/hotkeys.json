@@ -1,0 +1,23 @@
+{
+  "templater-obsidian:_Templates/New note.md": [
+    { "modifiers": ["Mod", "Shift"], "key": "N" }
+  ],
+  "editor:toggle-highlight": [
+    { "modifiers": ["Mod"], "key": "H" }
+  ],
+  "editor:insert-codeblock": [
+    { "modifiers": ["Mod", "Shift"], "key": "'" }
+  ],
+  "editor:insert-wikilink": [
+    { "modifiers": ["Mod", "Shift"], "key": "I" }
+  ],
+  "editor:fold-all": [
+    { "modifiers": ["Alt", "Mod"], "key": "ArrowUp" }
+  ],
+  "editor:unfold-all": [
+    { "modifiers": ["Alt", "Mod"], "key": "ArrowDown" }
+  ],
+  "omnisearch:show-modal": [
+    { "modifiers": ["Mod", "Shift"], "key": "F" }
+  ]
+}

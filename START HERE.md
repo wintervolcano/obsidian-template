@@ -18,13 +18,33 @@ you. Put the note anywhere, set `type`, carry on.
 
 ## First five minutes
 
-1. Install **Templater**, point it at `_Templates/`, and bind a hotkey to *Templater:
-   Open insert template modal*. `New note.md` is a picker: it asks which type you want,
-   then makes the note in the right folder with the right name and frontmatter.
-2. Install **Tasks**. Any `- [ ]` anywhere gathers into one place.
-3. Settings -> Appearance -> CSS snippets, and turn on `paper` and `dashboard`.
+1. Install **Templater** and restart Obsidian. The settings ship with this vault, so it
+   comes up already pointed at `_Templates/` with the note picker bound to **cmd-shift-N**
+   (ctrl-shift-N on Windows and Linux).
+2. Press **cmd-shift-N**. It asks what kind of note you want, then makes it in the right
+   folder, with the right name and the right frontmatter. This is the one key worth
+   learning. Everything else in this vault is optional.
+3. Install **Tasks**. Any `- [ ]` anywhere gathers into `TASKS.md`.
 4. Open `HOME.md`. Install **Buttons** if you want the buttons to work.
 5. Open any `.base` file in `_Bases/`.
+
+If cmd-shift-N does nothing, Templater is not enabled yet, or the key is taken by
+something else on your system. Settings -> Hotkeys, search for *New note*, and rebind it.
+
+## What ships in `.obsidian/`
+
+Enough config that the vault works on first open, and nothing else:
+
+| File | Does |
+|---|---|
+| `hotkeys.json` | cmd-shift-N, and a handful of editor keys |
+| `plugins/templater-obsidian/data.json` | points Templater at `_Templates/` and registers the picker |
+| `daily-notes.json` | daily notes land in `00 DAILY NOTES` as `YYYY.MM.DD` |
+| `appearance.json` | turns on the `paper` and `dashboard` snippets |
+| `app.json` | attachments go in the nearest `attachments/` folder |
+
+No theme is set, so you get whatever you already use. Installing a plugin will not
+overwrite these, Obsidian leaves `data.json` alone and only writes the plugin code.
 
 ## The folders
 
