@@ -4,7 +4,7 @@ A scratch Obsidian vault for research work. It is the skeleton of the vault I us
 PhD in pulsar astronomy, with all of my own notes taken out: the folders, the templates,
 the Bases, the agent rules and the run-logging scripts.
 
-Written up here: [My Obsidian setup, in the age of agents](https://YOUR-SITE/blog/2026-11-19-my-obsidian-setup-in-the-age-of-agents).
+Written up here: [My Obsidian setup, in the age of agents](https://www.fazalkareem.com/blog/2026-11-19-my-obsidian-setup-in-the-age-of-agents).
 
 ## Install
 
